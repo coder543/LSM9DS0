@@ -1,9 +1,14 @@
 #include "mbed.h"
 #include "LSM9DS0.h"
 
+DigitalOut leda(LED1);
 LSM9DS0::LSM9DS0(PinName sda, PinName scl)
 {
+	leda = 0;
 	i2c = new I2C(sda, scl);
+	//testing to demonstrate I2C functionality
+	status2 = i2c->write(12, "test", 5);
+	leda = 1;
 }
 
 LSM9DS0::~LSM9DS0()

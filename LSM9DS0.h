@@ -16,4 +16,7 @@ public:
 	int readMagneto(int* xyz);
 
 	int setScale(int scale); //set scale (i.e. 2G, 4G, etc)
+
+	int status1;
+	int status2;
 };
