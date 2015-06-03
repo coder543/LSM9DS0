@@ -6,6 +6,8 @@ Serial pc(SERIAL_TX, SERIAL_RX);
 
 DigitalOut led(LED1);
 
+//3A and D6 are the I2C addresses
+
 int main()
 {
 	pc.printf("starting up...\r\n");
