@@ -1,9 +1,16 @@
 #include "mbed.h"
 
+#define ACCMAG_ADDR 0x3A
+#define GYRO_ADDR 0xD6
+
 class LSM9DS0
 {
 private:
 	I2C* i2c;
+
+	//reg is the register
+	int writeToRegister(char addr, char reg, char value);
+	int readFromRegister(char addr, char reg, char* returnValue);
 
 public:
 	LSM9DS0(PinName sda, PinName scl);
@@ -16,7 +23,4 @@ public:
 	int readMagneto(int* xyz);
 
 	int setScale(int scale); //set scale (i.e. 2G, 4G, etc)
-
-	int status1;
-	int status2;
 };

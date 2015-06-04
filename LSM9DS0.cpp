@@ -4,16 +4,29 @@
 DigitalOut leda(LED1);
 LSM9DS0::LSM9DS0(PinName sda, PinName scl)
 {
-	leda = 0;
 	i2c = new I2C(sda, scl);
-	//testing to demonstrate I2C functionality
-	status2 = i2c->write(12, "test", 5);
-	leda = 1;
+	// status2 = i2c->write(12, "test", 5);
 }
 
 LSM9DS0::~LSM9DS0()
 {
 
+}
+
+int LSM9DS0::writeToRegister(char addr, char reg, char value)
+{
+	char writeBuf[2];
+	writeBuf[0] = reg;
+	writeBuf[1] = value;
+	return i2c->write(addr, writeBuf, 2);
+}
+
+int LSM9DS0::readFromRegister(char addr, char reg, char* returnValue)
+{
+	int retVal = i2c->write(addr, &reg, 1);
+	if (retVal)
+		return retVal;
+	return i2c->read(addr, returnValue, 1);
 }
 
 int LSM9DS0::readAccel(int* xyz)
