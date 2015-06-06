@@ -8,7 +8,10 @@ LSM9DS0::LSM9DS0(PinName sda, PinName scl)
 
 	//turn on the LSM9DS0, set the ODR to 960Hz, and the high-pass cutoff freq to maximum
 	writeToRegister(GYRO_ADDR, REG_CTRL_1, POWER_ON | ODR_960_G | BW_MAX_G);
+
 	writeToRegister(ACCMAG_ADDR, REG_CTRL_1, ODR_1600_X | XYZ_ENABLE_X);
+	writeToRegister(ACCMAG_ADDR, REG_CTRL_2, BW_773_X | SCALE_2G_X);
+
 	writeToRegister(ACCMAG_ADDR, REG_CTRL_5, ODR_100_M | RES_HIGH_M);
 
 	//configure stream mode with a watermark of 24
@@ -18,7 +21,7 @@ LSM9DS0::LSM9DS0(PinName sda, PinName scl)
 
 LSM9DS0::~LSM9DS0()
 {
-
+	delete i2c;
 }
 
 int LSM9DS0::writeToRegister(char addr, char reg, char value)
