@@ -5,9 +5,10 @@
 //then checks for an error code. If one is found, it
 //propogates that error code to the next level on the
 //call stack.
-#define unwrapchar(optional) optional.val.charval;\
-	if (optional.errorcode) {\
-		retval.errorcode = optional.errorcode;\
+Option tmp;
+#define unwrapchar(optional) (tmp = optional).val.charval;\
+	if (tmp.errorcode) {\
+		retval.errorcode = tmp.errorcode;\
 		return retval;\
 	}
 
@@ -15,6 +16,7 @@ DigitalOut leda(LED1);
 LSM9DS0::LSM9DS0(PinName sda, PinName scl)
 {
 	i2c = new I2C(sda, scl);
+	i2c->frequency(400000);
 
 	//turn on the LSM9DS0
 	//also, set the gyro to:
