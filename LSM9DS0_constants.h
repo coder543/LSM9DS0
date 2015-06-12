@@ -1,3 +1,6 @@
+#ifndef LSMCONSTANTS_H
+#define LSMCONSTANTS_H
+
 #define ACCMAG_ADDR      0x3A
 #define GYRO_ADDR        0xD6
 
@@ -67,3 +70,5 @@
 
 #define FIFO_MODE_STREAM 0x40
 #define FIFO_IS_EMPTY    0x20
+
+#endif

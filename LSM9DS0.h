@@ -1,19 +1,9 @@
+#ifndef LSM9DS0_H
+#define LSM9DS0_H
+
 #include "mbed.h"
 #include "LSM9DS0_constants.h"
-
-struct Option
-{
-	int errorcode;
-	union {
-		unsigned int intval;
-		unsigned short shortval;
-		unsigned char charval;
-		struct {
-			unsigned short* data;
-			unsigned char length;
-		} arrayval;
-	} val;
-};
+#include "Option.h"
 
 class LSM9DS0
 {
@@ -35,3 +25,5 @@ public:
 
 	Option setScale(int scale); //set scale (i.e. 2G, 4G, etc)
 };
+
+#endif
