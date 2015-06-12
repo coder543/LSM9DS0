@@ -13,6 +13,7 @@
 #define REG_Y_H_M        0x0B
 #define REG_Z_L_M        0x0C
 #define REG_Z_H_M        0x0D
+#define REG_CTRL_0       0x1F
 #define REG_CTRL_1       0x20
 #define REG_CTRL_2       0x21
 #define REG_CTRL_3       0x22
@@ -68,6 +69,7 @@
 #define ODR_100_M        0x1C
 #define RES_HIGH_M       0x60
 
+#define FIFO_ENABLE      0x40
 #define FIFO_MODE_STREAM 0x40
 #define FIFO_IS_EMPTY    0x20
 

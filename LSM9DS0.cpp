@@ -36,9 +36,11 @@ LSM9DS0::LSM9DS0(PinName sda, PinName scl)
 	//High resolution
 	writeToRegister(ACCMAG_ADDR, REG_CTRL_5, ODR_100_M | RES_HIGH_M);
 
-	//configure stream mode with a watermark of 24
+	//configure FIFO stream mode with a watermark of 24
 	writeToRegister(ACCMAG_ADDR, REG_FIFO_CTRL, FIFO_MODE_STREAM | 24);
+	writeToRegister(ACCMAG_ADDR, REG_CTRL_0, FIFO_ENABLE);
 	writeToRegister(GYRO_ADDR, REG_FIFO_CTRL, FIFO_MODE_STREAM | 24);
+	writeToRegister(GYRO_ADDR, REG_CTRL_5, FIFO_ENABLE);
 }
 
 LSM9DS0::~LSM9DS0()
@@ -73,6 +75,7 @@ Option LSM9DS0::readFromRegister(int addr, unsigned char reg)
 	return retval;
 }
 
+
 Option LSM9DS0::readAccel()
 {
 	Option retval;
@@ -80,9 +83,17 @@ Option LSM9DS0::readAccel()
 	
 	//wait for data
 	char fifo_src = unwrapchar(readFromRegister(ACCMAG_ADDR, REG_FIFO_SRC));
-	while (fifo_src & FIFO_IS_EMPTY)
+	int count = 10;
+	bool isEmpty = (fifo_src & FIFO_IS_EMPTY);
+	while (isEmpty && (count-- > 0)) {
 		fifo_src = unwrapchar(readFromRegister(ACCMAG_ADDR, REG_FIFO_SRC));
-	
+		isEmpty = (fifo_src & FIFO_IS_EMPTY);
+	}
+	if (count == 0)
+	{
+		retval.errorcode = 1;
+		return retval;
+	}
 	//allocate memory for the sought data
 	retval.val.arrayval.data = new unsigned short[3];
 	retval.val.arrayval.length = 3;
