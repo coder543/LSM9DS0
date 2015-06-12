@@ -23,7 +23,9 @@
 #define REG_Y_H_GX       0x2B
 #define REG_Z_L_GX       0x2C
 #define REG_Z_H_GX       0x2D
+#define REG_STATUS_X     0x27
 #define REG_FIFO_CTRL    0x2E
+#define REG_FIFO_SRC     0x2F
 
 #define POWER_OFF        0x00
 #define POWER_ON         0x08
@@ -64,3 +66,4 @@
 #define RES_HIGH_M       0x60
 
 #define FIFO_MODE_STREAM 0x40
+#define FIFO_IS_EMPTY    0x20

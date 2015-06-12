@@ -1,6 +1,12 @@
 #include "mbed.h"
 #include "LSM9DS0.h"
 
+#define unwrapchar(optional) optional.val.charval;\
+	if (optional.errorcode) {\
+		retval.errorcode = optional.errorcode;\
+		return retval;\
+	}
+
 DigitalOut leda(LED1);
 LSM9DS0::LSM9DS0(PinName sda, PinName scl)
 {
@@ -24,38 +30,54 @@ LSM9DS0::~LSM9DS0()
 	delete i2c;
 }
 
-int LSM9DS0::writeToRegister(char addr, char reg, char value)
+Option LSM9DS0::writeToRegister(int addr, unsigned char reg, unsigned char value)
 {
 	char writeBuf[2];
 	writeBuf[0] = reg;
 	writeBuf[1] = value;
-	return i2c->write(addr, writeBuf, 2);
+	Option retval;
+	retval.errorcode = i2c->write(addr, writeBuf, 2);
+	return retval;
 }
 
-int LSM9DS0::readFromRegister(char addr, char reg, char* returnValue)
+Option LSM9DS0::readFromRegister(int addr, unsigned char reg)
 {
-	int retVal = i2c->write(addr, &reg, 1);
-	if (retVal)
-		return retVal;
-	return i2c->read(addr, returnValue, 1);
+	Option retval;
+	retval.errorcode = i2c->write(addr, (char*)&reg, 1);
+	if (retval.errorcode)
+		return retval;
+	retval.errorcode = i2c->read(addr, (char*)&retval.val.charval, 1);
+	return retval;
 }
 
-int LSM9DS0::readAccel(int* xyz)
+Option LSM9DS0::readAccel()
 {
-	return 0;
+	Option retval;
+	retval.errorcode = 0;
+	char fifo_src = unwrapchar(readFromRegister(ACCMAG_ADDR, REG_FIFO_SRC));
+	while (fifo_src | FIFO_IS_EMPTY)
+		fifo_src = unwrapchar(readFromRegister(ACCMAG_ADDR, REG_FIFO_SRC));
+	
+	return retval;
 }
 
-int LSM9DS0::readGyro(int* xyz)
+Option LSM9DS0::readGyro()
 {
-	return 0;
+	Option retval;
+	retval.errorcode = 0;
+	return retval;
 }
 
-int LSM9DS0::readMagneto(int* xyz)
+Option LSM9DS0::readMagneto()
 {
-	return 0;
+	Option retval;
+	retval.errorcode = 0;
+	return retval;
 }
 
-int LSM9DS0::setScale(int scale)
+Option LSM9DS0::setScale(int scale)
 {
-	return 0;
+	Option retval;
+	retval.errorcode = 0;
+	return retval;
 }
