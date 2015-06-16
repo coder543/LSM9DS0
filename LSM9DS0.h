@@ -8,14 +8,18 @@
 class LSM9DS0
 {
 private:
-	I2C* i2c;
+	SPI* spi;
+	PinName cs;
 
 	//reg is the register
 	Option writeToRegister(int addr, unsigned char reg, unsigned char value);
 	Option readFromRegister(int addr, unsigned char reg);
+	
+	void spiwrite(unsigned char reg, unsigned char value);
+	int spiread(unsigned char reg);
 
 public:
-	LSM9DS0(PinName sda, PinName scl);
+	LSM9DS0(PinName cs, PinName mosi, PinName miso, PinName sck);
 	~LSM9DS0();
 	
 	//Optionally returns a three element array of values: x, y, and z

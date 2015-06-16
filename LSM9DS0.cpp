@@ -13,10 +13,13 @@ Option tmp;
 	}
 
 DigitalOut leda(LED1);
-LSM9DS0::LSM9DS0(PinName sda, PinName scl)
+LSM9DS0::LSM9DS0(PinName cs, PinName mosi, PinName miso, PinName sck)
 {
-	i2c = new I2C(sda, scl);
-	i2c->frequency(400000);
+	spi = new SPI(mosi, miso, sck);
+	spi->frequency(10000000);
+	spi->format(8, 2);
+	cs = 1;
+	this.cs = cs;
 
 	//turn on the LSM9DS0
 	//also, set the gyro to:
@@ -47,7 +50,21 @@ LSM9DS0::LSM9DS0(PinName sda, PinName scl)
 
 LSM9DS0::~LSM9DS0()
 {
-	delete i2c;
+	delete spi;
+}
+
+void spiwrite(unsigned char reg, unsigned char value)
+{
+	cs = 0;
+	// spi->write()
+	cs = 1;
+}
+
+int spiread(unsigned char reg)
+{
+	cs = 0;
+	
+	cs = 1;
 }
 
 Option LSM9DS0::writeToRegister(int addr, unsigned char reg, unsigned char value)
@@ -61,7 +78,8 @@ Option LSM9DS0::writeToRegister(int addr, unsigned char reg, unsigned char value
 	writeBuf[1] = value;
 	
 	//write the buffer, and receive the error code
-	retval.errorcode = i2c->write(addr, writeBuf, 2);
+	retval.errorcode = spi->write(addr, writeBuf, 2);
+
 	return retval;
 }
 
@@ -70,10 +88,10 @@ Option LSM9DS0::readFromRegister(int addr, unsigned char reg)
 	//Here, we're going to write the address to the LSM9DS0 so it
 	//knows which register to read, then we issue a read command.
 	Option retval;
-	retval.errorcode = i2c->write(addr, (char*)&reg, 1);
+	retval.errorcode = spi->write(addr, (char*)&reg, 1);
 	if (retval.errorcode)
 		return retval;
-	retval.errorcode = i2c->read(addr, (char*)&retval.val.charval, 1);
+	retval.errorcode = spi->read(addr, (char*)&retval.val.charval, 1);
 	return retval;
 }
 
