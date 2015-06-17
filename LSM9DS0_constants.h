@@ -1,8 +1,8 @@
 #ifndef LSMCONSTANTS_H
 #define LSMCONSTANTS_H
 
-#define ACCMAG_ADDR      0x3A
-#define GYRO_ADDR        0xD6
+#define ACCMAG           false
+#define GYRO             true
 
 //_X is accelerometer
 //_M is magnetometer

@@ -8,18 +8,17 @@
 class LSM9DS0
 {
 private:
-	SPI* spi;
-	PinName cs;
+	SPI* spi_g;
+	SPI* spi_xm;
+	DigitalOut* cs_g;
+	DigitalOut* cs_xm;
 
 	//reg is the register
-	Option writeToRegister(int addr, unsigned char reg, unsigned char value);
-	Option readFromRegister(int addr, unsigned char reg);
-	
-	void spiwrite(unsigned char reg, unsigned char value);
-	int spiread(unsigned char reg);
+	void writeToRegister(bool gyro, unsigned char reg, unsigned char value);
+	unsigned char* readFromRegister(bool gyro, unsigned char reg, unsigned int count);
 
 public:
-	LSM9DS0(PinName cs, PinName mosi, PinName miso, PinName sck);
+	LSM9DS0(PinName cs_g, PinName cs_xm, PinName miso_g, PinName miso_xm, PinName mosi_g, PinName mosi_xm, PinName sck_g, PinName sck_xm);
 	~LSM9DS0();
 	
 	//Optionally returns a three element array of values: x, y, and z
