@@ -13,11 +13,11 @@ LSM9DS0::LSM9DS0(PinName cs_g, PinName cs_xm, PinName miso_g, PinName miso_xm, P
 	*this->cs_xm = 1;
 
 	spi_g = new SPI(mosi_g, miso_g, sck_g);
-	spi_g->frequency(7000000);
+	spi_g->frequency(8000000);
 	spi_g->format(8, 3);
 
 	spi_xm = new SPI(mosi_xm, miso_xm, sck_xm);
-	spi_xm->frequency(7000000);
+	spi_xm->frequency(8000000);
 	spi_xm->format(8, 3);
 
 	//turn on the LSM9DS0
@@ -27,7 +27,7 @@ LSM9DS0::LSM9DS0(PinName cs_g, PinName cs_xm, PinName miso_g, PinName miso_xm, P
 	// Scale defaults to 245 degrees per second
 	// DTOGGLE
 	writeToRegister(GYRO, REG_CTRL_1, POWER_ON | ODR_960_G | BW_MAX_G);
-
+	return;
 	//set the accelerometer to:
 	//ODR = 1600Hz
 	//Bandwidth = 773Hz
@@ -87,6 +87,7 @@ void LSM9DS0::writeToRegister(bool gyro, unsigned char reg, unsigned char value)
 	// DTOGGLE
 	//raise it back up to end the transfer.
 	*currentCS = 1;
+	readFromRegister(gyro, reg, 1);
 	// DTOGGLE
 }
 
@@ -111,11 +112,18 @@ unsigned char* LSM9DS0::readFromRegister(bool gyro, unsigned char reg, unsigned 
 	}
 	unsigned char* returnVal = new unsigned char[count];
 	*currentCS = 0;
-	currentSPI->write(reg | 0xc0); //force RW and MS to 1.
-	unsigned int i = 0;
-	while (i < count)
+	// unsigned char* txreg = (unsigned char*)0x4001300C;
+	// *txreg = (reg | 0x80) & 0xBF;
+	currentSPI->write((reg | 0x80) & 0xBF); //force RW to 1 and MS to 0.
+	unsigned int i = 1;
+	returnVal[0] = 0xFF;
+	while (i < 20 && returnVal[i-1] == 0xFF)
 		returnVal[i++] = currentSPI->write(0x00);
 	*currentCS = 1;
+	// returnVal[0] = *(unsigned short*)0x4001300C;
+	DTOGGLE
+	currentSPI->write(returnVal[i-1]);
+	DTOGGLE
 	return returnVal;
 }
 
