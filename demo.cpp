@@ -8,7 +8,7 @@
 
 int main()
 {
-	LSM9DS0 lsm9(D9, D7, D12, D5, D11, D4, D13, D3);
-	// lsm9.readAccel();
+	LSM9DS0 lsm9(D9, D7, D12, D11, D13);
+	lsm9.readAccel();
 	return 0;
 }
