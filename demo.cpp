@@ -9,6 +9,8 @@
 int main()
 {
 	LSM9DS0 lsm9(D9, D7, D12, D11, D13);
-	lsm9.readAccel();
+	// lsm9.readAccel();
+	// lsm9.readMagneto();
+	// lsm9.readGyro();
 	return 0;
 }

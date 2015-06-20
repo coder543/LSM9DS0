@@ -1,5 +1,8 @@
-#include "mbed.h"
+#include <vector>
 #include "LSM9DS0.h"
+
+//will be used for chaining
+#define readburst() spi->write(0x00);
 
 LSM9DS0::LSM9DS0(PinName cs_g, PinName cs_xm, PinName miso, PinName mosi, PinName sck)
 {
@@ -12,14 +15,14 @@ LSM9DS0::LSM9DS0(PinName cs_g, PinName cs_xm, PinName miso, PinName mosi, PinNam
 	spi->frequency(8000000);
 	spi->format(8, 3);
 
-	//turn on the LSM9DS0
+	//turn on the gyro
 	//also, set the gyro to:
 	//ODR = 960Hz
 	//high-pass cutoff = maximum frequency
 	// Scale defaults to 245 degrees per second
-	writeToRegister(GYRO, REG_CTRL_1, POWER_ON | ODR_960_G | BW_MAX_G);
-	spi->write(*readFromRegister(GYRO, REG_CTRL_1, 1));
+	writeToRegister(GYRO, REG_CTRL_1, POWER_ON_G | ODR_960_G | BW_MAX_G);
 
+	//setting ODR automatically turns on accelerometer
 	//set the accelerometer to:
 	//ODR = 1600Hz
 	//Bandwidth = 773Hz
@@ -28,9 +31,11 @@ LSM9DS0::LSM9DS0(PinName cs_g, PinName cs_xm, PinName miso, PinName mosi, PinNam
 	writeToRegister(ACCMAG, REG_CTRL_1, ODR_1600_X | XYZ_ENABLE_X);
 	writeToRegister(ACCMAG, REG_CTRL_2, BW_773_X | SCALE_2G_X);
 
+	//turn on the magnetometer
 	//set the magnetometer to:
 	//ODR = 100Hz
 	//High resolution
+	writeToRegister(ACCMAG, REG_CTRL_7, POWER_ON_M);
 	writeToRegister(ACCMAG, REG_CTRL_5, ODR_100_M | RES_HIGH_M);
 
 	//configure FIFO stream mode with a watermark of 24
@@ -66,88 +71,169 @@ void LSM9DS0::writeToRegister(bool gyro, unsigned char reg, unsigned char value)
 	*currentCS = 1;
 }
 
-unsigned char* LSM9DS0::readFromRegister(bool gyro, unsigned char reg, unsigned int count)
+unsigned char LSM9DS0::readFromRegister(bool gyro, unsigned char reg)
 {
-	//Here, we're going to write the address to the LSM9DS0 so it
-	//knows which register to read, then we issue a read command.
-	if (count == 0)
-		return (unsigned char*)NULL;
 	DigitalOut* currentCS;
 	if (gyro == true)
 		currentCS = cs_g;
 	else
 		currentCS = cs_xm;
-	unsigned char* returnVal = new unsigned char[count];
 	*currentCS = 0;
-	// unsigned char* txreg = (unsigned char*)0x4001300C;
-	// *txreg = (reg | 0x80) & 0xBF;
-	spi->write((reg | 0x80) & 0xBF); //force RW to 1 and MS to 0.
-	unsigned int i = 0;
-	while (i < count)
-		returnVal[i++] = spi->write(0x00);
+	//Here, we're going to write the address to the LSM9DS0 so it
+	//knows which register to read, then we issue a read command.
+	spi->write(reg | 0xc0); //force RW and MS to 1.
+	unsigned char returnVal = (unsigned char)spi->write(0x00);
 	*currentCS = 1;
 	return returnVal;
 }
 
 
-Option LSM9DS0::readAccel()
+vector<Triple> LSM9DS0::readAccel()
 {
-	Option retval;
-	retval.errorcode = 0;
+	vector<Triple> retval;
 	
 	//wait for data
-	char fifo_src = *readFromRegister(ACCMAG, REG_FIFO_SRC, 1);
-	spi->write(fifo_src);
-	int count = 10;
-	bool isEmpty = (fifo_src & FIFO_IS_EMPTY);
-	while (isEmpty && (count-- > 0)) {
-		fifo_src = *readFromRegister(ACCMAG, REG_FIFO_SRC, 1);
-		spi->write(fifo_src);
+	char fifo_src;
+	bool isEmpty;
+	unsigned char numVals;
+	do {
+		fifo_src = readFromRegister(ACCMAG, REG_FIFO_SRC);
 		isEmpty = (fifo_src & FIFO_IS_EMPTY);
-	}
-	if (count == 0)
-	{
-		retval.errorcode = 1;
-		return retval;
-	}
-	//allocate memory for the sought data
-	retval.val.arrayval.data = new unsigned short[3];
-	retval.val.arrayval.length = 3;
+		numVals = (fifo_src & 0x1F);
+	} while (isEmpty || numVals == 0);
+
+	/* dynamic read expansion allows for the possibility of more data
+	 * being generated while we're reading data out, so at the end it
+	 * checks for new data and reads it out as well. An additional
+	 * vector expansion is costly, especially if the number of values
+	 * to be read is large as I've sometimes seen with my digital logic
+	 * analyzer, therefore we cap the maximum expansion to 1.5*numVals
+	 */
+//#define DYNAMIC_READ_EXPANSION
+#ifdef DYNAMIC_READ_EXPANSION
+	unsigned char numValMax = numVals + (numVals >> 2);
+	retval.reserve(numValMax);
+#else
+	retval.reserve(numVals);
+#endif
 	
+	for (unsigned char i = 0; i < numVals; ++i)
+	{
+		Triple tmpval;
+		//retrieve the X acceleration and store it into the first element
+		tmpval.x = (readFromRegister(ACCMAG, REG_X_L_GX)) | ((readFromRegister(ACCMAG, REG_X_H_GX)) << 8);
+		
+		//retrieve the Y acceleration and store it into the second element
+		tmpval.y = (readFromRegister(ACCMAG, REG_Y_L_GX)) | ((readFromRegister(ACCMAG, REG_Y_H_GX)) << 8);
+
+		//retrieve the Z acceleration and store it into the third element
+		tmpval.z = (readFromRegister(ACCMAG, REG_Z_L_GX)) | ((readFromRegister(ACCMAG, REG_Z_H_GX)) << 8);
+
+		retval.push_back(tmpval);
+
+#ifdef DYNAMIC_READ_EXPANSION
+		if (i == numVals - 1 && numVals < numValMax)
+		{
+			fifo_src = readFromRegister(ACCMAG, REG_FIFO_SRC);
+			isEmpty = (fifo_src & FIFO_IS_EMPTY);
+			unsigned char valtmp = (fifo_src & 0x1F);
+			numVals += valtmp;
+			if (!isEmpty && valtmp > 0)
+				numVals = (numVals < numValMax ? numVals : numValMax);
+			else
+				break;
+		}
+#endif
+	}
+
+	return retval;
+}
+
+Triple LSM9DS0::readMagneto()
+{
+	Triple retval;
+
+	//wait for data
+	char status_reg;
+	bool hasData;
+	do {
+		status_reg = readFromRegister(ACCMAG, REG_STATUS_M);
+		hasData = ((status_reg & NEW_DATA_M) == 0x0F);
+	} while (!hasData);
+
 	//retrieve the X acceleration and store it into the first element
-	short tmpval = *readFromRegister(ACCMAG, REG_X_H_GX, 1);
-	tmpval = (tmpval << 8) | *readFromRegister(ACCMAG, REG_X_L_GX, 1);
-	retval.val.arrayval.data[0] = tmpval;
+	retval.x = (readFromRegister(ACCMAG, REG_X_L_M)) | ((readFromRegister(ACCMAG, REG_X_H_M)) << 8);
 	
 	//retrieve the Y acceleration and store it into the second element
-	tmpval = *readFromRegister(ACCMAG, REG_Y_H_GX, 1);
-	tmpval = (tmpval << 8) | *readFromRegister(ACCMAG, REG_Y_L_GX, 1);
-	retval.val.arrayval.data[1] = tmpval;
-	
+	retval.y = (readFromRegister(ACCMAG, REG_Y_L_M)) | ((readFromRegister(ACCMAG, REG_Y_H_M)) << 8);
+
 	//retrieve the Z acceleration and store it into the third element
-	tmpval = *readFromRegister(ACCMAG, REG_Z_H_GX, 1);
-	tmpval = (tmpval << 8) | *readFromRegister(ACCMAG, REG_Z_L_GX, 1);
-	retval.val.arrayval.data[2] = tmpval;
+	retval.z = (readFromRegister(ACCMAG, REG_Z_L_M)) | ((readFromRegister(ACCMAG, REG_Z_H_M)) << 8);
+
+
 	return retval;
 }
 
-Option LSM9DS0::readGyro()
+vector<Triple> LSM9DS0::readGyro()
 {
-	Option retval;
-	retval.errorcode = 0;
+	vector<Triple> retval;
+		//wait for data
+	char fifo_src;
+	bool isEmpty;
+	unsigned char numVals;
+	do {
+		fifo_src = readFromRegister(GYRO, REG_FIFO_SRC);
+		isEmpty = (fifo_src & FIFO_IS_EMPTY);
+		numVals = (fifo_src & 0x1F);
+	} while (isEmpty || numVals == 0);
+
+	/* dynamic read expansion allows for the possibility of more data
+	 * being generated while we're reading data out, so at the end it
+	 * checks for new data and reads it out as well. An additional
+	 * vector expansion is costly, especially if the number of values
+	 * to be read is large as I've sometimes seen with my digital logic
+	 * analyzer, therefore we cap the maximum expansion to 1.5*numVals
+	 */
+//#define DYNAMIC_READ_EXPANSION
+#ifdef DYNAMIC_READ_EXPANSION
+	unsigned char numValMax = numVals + (numVals >> 2);
+	retval.reserve(numValMax);
+#else
+	retval.reserve(numVals);
+#endif
+	
+	for (unsigned char i = 0; i < numVals; ++i)
+	{
+		Triple tmpval;
+		//retrieve the X acceleration and store it into the first element
+		tmpval.x = (readFromRegister(GYRO, REG_X_L_GX)) | ((readFromRegister(GYRO, REG_X_H_GX)) << 8);
+		
+		//retrieve the Y acceleration and store it into the second element
+		tmpval.y = (readFromRegister(GYRO, REG_Y_L_GX)) | ((readFromRegister(GYRO, REG_Y_H_GX)) << 8);
+
+		//retrieve the Z acceleration and store it into the third element
+		tmpval.z = (readFromRegister(GYRO, REG_Z_L_GX)) | ((readFromRegister(GYRO, REG_Z_H_GX)) << 8);
+
+		retval.push_back(tmpval);
+
+#ifdef DYNAMIC_READ_EXPANSION
+		if (i == numVals - 1 && numVals < numValMax)
+		{
+			fifo_src = readFromRegister(GYRO, REG_FIFO_SRC);
+			isEmpty = (fifo_src & FIFO_IS_EMPTY);
+			unsigned char valtmp = (fifo_src & 0x1F);
+			numVals += valtmp;
+			if (!isEmpty && valtmp > 0)
+				numVals = (numVals < numValMax ? numVals : numValMax);
+			else
+				break;
+		}
+#endif
+	}
 	return retval;
 }
 
-Option LSM9DS0::readMagneto()
+bool LSM9DS0::setScale(int scale)
 {
-	Option retval;
-	retval.errorcode = 0;
-	return retval;
-}
-
-Option LSM9DS0::setScale(int scale)
-{
-	Option retval;
-	retval.errorcode = 0;
-	return retval;
+	return false;
 }

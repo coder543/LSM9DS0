@@ -3,7 +3,14 @@
 
 #include "mbed.h"
 #include "LSM9DS0_constants.h"
-#include "Option.h"
+#include <vector>
+
+struct Triple
+{
+	short x;
+	short y;
+	short z;
+};
 
 class LSM9DS0
 {
@@ -14,18 +21,18 @@ private:
 
 	//reg is the register
 	void writeToRegister(bool gyro, unsigned char reg, unsigned char value);
-	unsigned char* readFromRegister(bool gyro, unsigned char reg, unsigned int count);
+	unsigned char readFromRegister(bool gyro, unsigned char reg);
 
 public:
 	LSM9DS0(PinName cs_g, PinName cs_xm, PinName miso, PinName mosi, PinName sck);
 	~LSM9DS0();
 	
-	//Optionally returns a three element array of values: x, y, and z
-	Option readAccel();
-	Option readGyro();
-	Option readMagneto();
+	//Returns a three element array of values: x, y, and z
+	vector<Triple> readAccel();
+	Triple readMagneto();
+	vector<Triple> readGyro();
 
-	Option setScale(int scale); //set scale (i.e. 2G, 4G, etc)
+	bool setScale(int scale); //set scale (i.e. 2G, 4G, etc)
 };
 
 #endif

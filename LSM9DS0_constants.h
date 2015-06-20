@@ -7,6 +7,7 @@
 //_X is accelerometer
 //_M is magnetometer
 //_G is gyro
+#define REG_STATUS_M     0x07
 #define REG_X_L_M        0x08
 #define REG_X_H_M        0x09
 #define REG_Y_L_M        0x0A
@@ -31,8 +32,8 @@
 #define REG_FIFO_CTRL    0x2E
 #define REG_FIFO_SRC     0x2F
 
-#define POWER_OFF        0x00
-#define POWER_ON         0x08
+#define POWER_OFF_G      0x00
+#define POWER_ON_G       0x08
 #define ODR_95_G         0x00
 #define ODR_190_G        0x40
 #define ODR_380_G        0x80
@@ -68,6 +69,9 @@
 #define TEMPSENSE_ON     0x80
 #define ODR_100_M        0x1C
 #define RES_HIGH_M       0x60
+#define NEW_DATA_M       0x0F
+#define POWER_OFF_M      0x02
+#define POWER_ON_M       0x00
 
 #define FIFO_ENABLE      0x40
 #define FIFO_MODE_STREAM 0x40
