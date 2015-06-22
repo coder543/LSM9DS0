@@ -33,7 +33,7 @@
 #define REG_FIFO_SRC     0x2F
 
 #define POWER_OFF_G      0x00
-#define POWER_ON_G       0x08
+#define POWER_ON_G       0x0F
 #define ODR_95_G         0x00
 #define ODR_190_G        0x40
 #define ODR_380_G        0x80
