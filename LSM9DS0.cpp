@@ -233,7 +233,19 @@ vector<Triple> LSM9DS0::readGyro()
 	return retval;
 }
 
-bool LSM9DS0::setScale(int scale)
+//the scale input is bit-masked to prevent the scale function
+//from adjusting anything but scale.
+void LSM9DS0::setGyroScale(char scale)
 {
-	return false;
+	writeToRegister(GYRO, REG_CTRL_4, scale & 0x30);
+}
+
+void LSM9DS0::setAccScale(char scale)
+{
+	writeToRegister(ACCMAG, REG_CTRL_2, BW_773_X | (scale & 0x38));
+}
+
+void LSM9DS0::setMagScale(char scale)
+{
+	writeToRegister(ACCMAG, REG_CTRL_6, scale & 0x60);
 }

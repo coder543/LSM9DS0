@@ -32,7 +32,11 @@ public:
 	Triple readMagneto();
 	vector<Triple> readGyro();
 
-	bool setScale(int scale); //set scale (i.e. 2G, 4G, etc)
+
+	//use appropriate scale constants from the constants header
+	void setGyroScale(char scale);
+	void setAccScale(char scale);
+	void setMagScale(char scale);
 };
 
 #endif

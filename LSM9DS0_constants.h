@@ -42,6 +42,9 @@
 #define BW_LOW_G         0x10
 #define BW_HIGH_G        0x20
 #define BW_MAX_G         0x30
+#define SCALE_245DPS_G   0x00
+#define SCALE_500DPS_G   0x10
+#define SCALE_2000DPS_G  0x20
 
 //ODR_X = 3.125 Hz * 2^(ODR_VAL - 1)
 //1600 Hz is maximum
@@ -72,6 +75,10 @@
 #define NEW_DATA_M       0x0F
 #define POWER_OFF_M      0x02
 #define POWER_ON_M       0x00
+#define SCALE_2G_M       0x00
+#define SCALE_4G_M       0x02
+#define SCALE_8G_M       0x04
+#define SCALE_12G_M      0x06
 
 #define FIFO_ENABLE      0x40
 #define FIFO_MODE_STREAM 0x40
