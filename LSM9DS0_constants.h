@@ -70,7 +70,7 @@
 #define SCALE_16G_X      0x20
 
 #define TEMPSENSE_ON     0x80
-#define ODR_100_M        0x1C
+#define ODR_100_M        0x14
 #define RES_HIGH_M       0x60
 #define NEW_DATA_M       0x0F
 #define POWER_OFF_M      0x02
